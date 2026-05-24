@@ -1,0 +1,6 @@
+# Worker service — same as API plus ML/forecasting libs
+-r requirements-api.txt
+prophet>=1.1.5
+transformers>=4.40.0
+torch>=2.2.0
+accelerate>=0.27.0
