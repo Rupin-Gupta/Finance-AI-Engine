@@ -50,27 +50,26 @@ async def run_sector_report(conn: asyncpg.Connection) -> list[str]:
 
     for sector, symbols in sectors.items():
         for row in symbols:
-            try:
-                metrics = {
-                    k: round(float(v), 4) if v is not None else "N/A"
-                    for k, v in {
-                        "SMA(20)":      row["sma_20"],
-                        "EMA(20)":      row["ema_20"],
-                        "RSI(14)":      row["rsi_14"],
-                        "Volatility":   row["volatility_20"],
-                        "Momentum(10)": row["momentum_10"],
-                    }.items()
-                }
-                prompt = build_report_prompt(f"{row['symbol']} ({sector})", metrics)
-                report_text = await client.complete(prompt)
-                chat_id = await append_chat_history(
-                    conn,
-                    query=f"Sector report: {row['symbol']} ({sector})",
-                    response=report_text,
-                    sources=[],
-                )
-                chat_ids.append(chat_id)
-            except Exception as exc:
-                logger.error("sector_report failed for %s (%s): %s", row["symbol"], sector, exc)
+            metrics = {
+                k: round(float(v), 4) if v is not None else "N/A"
+                for k, v in {
+                    "SMA(20)":      row["sma_20"],
+                    "EMA(20)":      row["ema_20"],
+                    "RSI(14)":      row["rsi_14"],
+                    "Volatility":   row["volatility_20"],
+                    "Momentum(10)": row["momentum_10"],
+                }.items()
+            }
+            prompt = build_report_prompt(f"{row['symbol']} ({sector})", metrics)
+            # LLM/DB errors propagate so the scheduled job is marked "failed" loudly
+            # rather than silently completing with zero reports (e.g. quota exhaustion).
+            report_text = await client.complete(prompt)
+            chat_id = await append_chat_history(
+                conn,
+                query=f"Sector report: {row['symbol']} ({sector})",
+                response=report_text,
+                sources=[],
+            )
+            chat_ids.append(chat_id)
 
     return chat_ids

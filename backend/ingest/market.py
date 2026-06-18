@@ -9,12 +9,16 @@ from backend.config import settings
 
 
 def _download_ohlcv(symbol: str, period: str, interval: str) -> pd.DataFrame:
+    # auto_adjust=True set EXPLICITLY: returns split- and dividend-adjusted OHLC so a
+    # split never looks like a price crash to the signal engine / backtest. Pinning it
+    # guards against yfinance silently changing the default (corporate-actions safety).
     return yf.download(
         symbol,
         period=period,
         interval=interval,
         progress=False,
         threads=False,
+        auto_adjust=True,
     )
 
 

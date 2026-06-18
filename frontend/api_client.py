@@ -19,6 +19,12 @@ def post(path: str, body: dict) -> dict:
     return resp.json()
 
 
+def delete(path: str) -> dict:
+    resp = httpx.delete(f"{API_BASE}{path}", headers=_headers, timeout=30)
+    resp.raise_for_status()
+    return resp.json()
+
+
 def upload_file(path: str, file, doc_type: str) -> dict:
     resp = httpx.post(
         f"{API_BASE}{path}",

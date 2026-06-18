@@ -43,10 +43,23 @@ async def ingest_market(request: Request, req: MarketIngestRequest, conn=Depends
     return {"job_id": job_id}
 
 
+def _validated_doc_request(req: DocIngestRequest) -> DocIngestRequest:
+    """Runs the SSRF guard before the DB dependency acquires a connection."""
+    validate_ingest_url(req.source_url)
+    return req
+
+
+async def _checked_upload(file: UploadFile = File(...)) -> tuple[UploadFile, bytes]:
+    """Reads the upload and enforces the size cap before the DB dependency."""
+    raw = await file.read()
+    if len(raw) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File exceeds 10 MB limit")
+    return file, raw
+
+
 @router.post("/docs")
 @limiter.limit("10/minute")
-async def ingest_docs(request: Request, req: DocIngestRequest, conn=Depends(get_db)):
-    validate_ingest_url(req.source_url)
+async def ingest_docs(request: Request, req: DocIngestRequest = Depends(_validated_doc_request), conn=Depends(get_db)):
     job_id = await run_doc_ingest(conn, req.source_url, req.doc_type)
     return {"job_id": job_id}
 
@@ -55,13 +68,11 @@ async def ingest_docs(request: Request, req: DocIngestRequest, conn=Depends(get_
 @limiter.limit("10/minute")
 async def ingest_upload(
     request: Request,
-    file: UploadFile = File(...),
+    upload: tuple[UploadFile, bytes] = Depends(_checked_upload),
     doc_type: str = Form("report"),
     conn=Depends(get_db),
 ):
-    raw = await file.read()
-    if len(raw) > _MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="File exceeds 10 MB limit")
+    file, raw = upload
     text = _extract_text(raw, file.filename or "", file.content_type or "")
     source_url = f"upload://{file.filename}"
     job_id = await run_text_ingest(conn, text, source_url, doc_type)

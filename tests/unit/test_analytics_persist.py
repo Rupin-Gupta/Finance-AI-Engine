@@ -42,15 +42,15 @@ async def test_upsert_analytics_writes_rows():
     df = make_ohlcv_df(50)
     df = add_all_indicators(df)
     records = df[
-        ["symbol", "timestamp", "sma_20", "ema_20", "rsi_14", "volatility_20", "momentum_10"]
+        ["symbol", "timestamp", "sma_20", "ema_9", "ema_20", "rsi_14", "volatility_20", "momentum_10"]
     ].to_dict("records")
 
     count = await analytics_queries.upsert_analytics(conn, records)
 
     assert count == 50
     assert len(conn.rows) == 50
-    # each row: (symbol, timestamp, sma_20, ema_20, rsi_14, volatility_20, momentum_10)
-    sym, ts, sma, ema, rsi, vol, mom = conn.rows[-1]
+    # each row: (symbol, timestamp, sma_20, ema_9, ema_20, rsi_14, volatility_20, momentum_10)
+    sym, ts, sma, ema9, ema20, rsi, vol, mom = conn.rows[-1]
     assert sym == "AAPL"
     assert isinstance(ts, (datetime, pd.Timestamp))
 

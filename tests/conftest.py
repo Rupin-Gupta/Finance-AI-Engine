@@ -1,4 +1,11 @@
 import os
+import sys
+from pathlib import Path
+
+# The Streamlit frontend runs with frontend/ as the working dir, so its modules
+# use bare imports (`from api_client import get`, `from page_modules import ...`).
+# Put frontend/ on sys.path so tests can import them the same way the app does.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "frontend"))
 
 # Set before any backend module is imported so Settings() validator passes.
 os.environ.setdefault("API_KEY", "test-secret-key-for-pytest")

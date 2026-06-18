@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* After-Hours Terminal — design tokens (contrast-audited against --bg). */
+:root {
+  --bg: #0b0e13;
+  --surface: #121722;
+  --surface-2: #1a2130;
+  --border: #232c3b;
+  --text: #e6edf3; /* ~13:1 on --bg */
+  --text-muted: #9aa7b8; /* ~5.4:1 on --bg */
+  --accent: #f5b301;
+  --bull: #22c55e;
+  --bear: #f0556b;
+  --neutral: #c9a227;
+  --info: #5aa2f0;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    background: var(--bg);
+    color: var(--text);
+  }
+  body {
+    @apply font-sans antialiased;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+  /* The anchor: every number is tabular monospace. */
+  .num {
+    @apply font-mono;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Visible keyboard focus everywhere, never removed. */
+  :focus-visible {
+    outline: 2px solid var(--info);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  /* Respect reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border bg-surface;
+  }
+  .btn {
+    @apply inline-flex min-h-[40px] items-center justify-center gap-2 rounded-md border
+      px-3 text-sm font-medium transition-colors;
+  }
+  .btn:hover {
+    background: var(--surface-2);
+  }
+  .btn-accent {
+    @apply border-transparent font-semibold text-bg;
+    background: var(--accent);
+  }
+  .btn-accent:hover {
+    filter: brightness(1.08);
+    background: var(--accent);
+  }
+  .input {
+    @apply min-h-[40px] rounded-md border bg-surface px-3 text-sm text-text
+      placeholder:text-muted;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-2xs font-medium uppercase tracking-wide;
+  }
+  .th {
+    @apply px-3 py-2 text-left text-2xs font-semibold uppercase tracking-wide text-muted;
+  }
+  .td {
+    @apply px-3 py-2 text-sm;
+  }
+  .row-hover:hover {
+    background: var(--surface-2);
+  }
+  /* Skip link — hidden until focused. */
+  .skip-link {
+    @apply absolute left-3 top-3 z-50 -translate-y-16 rounded-md border bg-surface px-3 py-2
+      text-sm font-medium transition-transform focus:translate-y-0;
+  }
+}

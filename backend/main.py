@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 import logging
 from contextlib import asynccontextmanager
@@ -12,8 +13,9 @@ from backend.config import settings
 from backend.logging_config import configure_logging, request_id_var
 from backend.db.connection import init_db_pool, close_db_pool, get_db_pool
 from backend.db.migrations.migrate import run_migrations
-from backend.api.routers import stocks, ingest, analytics, query, alerts, jobs, reports, decision
+from backend.api.routers import stocks, ingest, analytics, query, alerts, jobs, reports, decision, fundamentals, options, portfolio, watchlist, performance, stream, calibration, corporate_actions, paper, weights, india, regime, events, data_quality, ml
 from backend.api.limiter import limiter
+from backend.api.stream import manager as stream_manager, run_broadcaster
 
 configure_logging(service="api")
 logger = logging.getLogger(__name__)
@@ -30,8 +32,20 @@ async def lifespan(app: FastAPI):
     pool = get_db_pool()
     await run_migrations(pool)
     logger.info("DB migrations complete")
-    yield
-    await close_db_pool()
+
+    broadcaster = asyncio.create_task(
+        run_broadcaster(stream_manager, pool,
+                        settings.stream_interval_seconds, settings.stream_max_symbols)
+    )
+    try:
+        yield
+    finally:
+        broadcaster.cancel()
+        try:
+            await broadcaster
+        except asyncio.CancelledError:
+            pass
+        await close_db_pool()
 
 
 app = FastAPI(title="Financial AI Platform", version="1.0.0", lifespan=lifespan)
@@ -76,7 +90,22 @@ app.include_router(query.router,     prefix="/v1/query",     tags=["rag"])
 app.include_router(alerts.router,    prefix="/v1/alerts",    tags=["alerts"])
 app.include_router(jobs.router,      prefix="/v1/jobs",      tags=["jobs"])
 app.include_router(reports.router,   prefix="/v1/reports",   tags=["reports"])
-app.include_router(decision.router,  prefix="/v1/decision",  tags=["decision"])
+app.include_router(decision.router,      prefix="/v1/decision",      tags=["decision"])
+app.include_router(fundamentals.router, prefix="/v1/fundamentals", tags=["fundamentals"])
+app.include_router(options.router,      prefix="/v1/options",      tags=["options"])
+app.include_router(portfolio.router,    prefix="/v1/portfolio",    tags=["portfolio"])
+app.include_router(watchlist.router,    prefix="/v1/watchlist",    tags=["watchlist"])
+app.include_router(performance.router,  prefix="/v1/performance",  tags=["performance"])
+app.include_router(calibration.router,  prefix="/v1/calibration",  tags=["calibration"])
+app.include_router(corporate_actions.router, prefix="/v1/corporate-actions", tags=["corporate-actions"])
+app.include_router(paper.router,        prefix="/v1/paper",        tags=["paper-trading"])
+app.include_router(weights.router,      prefix="/v1/weights",      tags=["signal-weights"])
+app.include_router(india.router,        prefix="/v1/india",        tags=["india-signals"])
+app.include_router(regime.router,       prefix="/v1/regime",       tags=["market-regime"])
+app.include_router(events.router,       prefix="/v1/events",       tags=["macro-events"])
+app.include_router(data_quality.router, prefix="/v1/data-quality", tags=["data-quality"])
+app.include_router(ml.router,           prefix="/v1/ml",           tags=["ml-signal"])
+app.include_router(stream.router,       prefix="/v1",              tags=["stream"])
 
 
 @app.get("/health", tags=["ops"])

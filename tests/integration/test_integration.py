@@ -320,7 +320,7 @@ async def test_anomaly_scan_spike_writes_alert_and_job_row():
     # Return proper dict-like records via pandas-compatible path
     real_rows = [dict(r) for r in all_rows]
 
-    with patch("backend.scheduler.jobs.anomaly_scan.get_db_pool", AsyncMock(return_value=mock_pool)), \
+    with patch("backend.scheduler.jobs.anomaly_scan.get_db_pool", MagicMock(return_value=mock_pool)), \
          patch("backend.scheduler.jobs.anomaly_scan.get_ohlcv", AsyncMock(return_value=real_rows)), \
          patch("backend.scheduler.jobs.anomaly_scan.insert_alert", AsyncMock(return_value="alert-spike")) as mock_alert:
         await anomaly_run()
@@ -352,7 +352,7 @@ async def test_anomaly_scan_no_anomalies_writes_no_alerts():
     mock_pool = MagicMock()
     mock_pool.acquire = MagicMock(return_value=pool_cm)
 
-    with patch("backend.scheduler.jobs.anomaly_scan.get_db_pool", AsyncMock(return_value=mock_pool)), \
+    with patch("backend.scheduler.jobs.anomaly_scan.get_db_pool", MagicMock(return_value=mock_pool)), \
          patch("backend.scheduler.jobs.anomaly_scan.get_ohlcv", AsyncMock(return_value=flat_rows)), \
          patch("backend.scheduler.jobs.anomaly_scan.insert_alert", AsyncMock()) as mock_alert:
         await anomaly_run()

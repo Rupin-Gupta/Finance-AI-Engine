@@ -31,7 +31,7 @@ def render():
             type=ACCEPTED,
             help="Supported: PDF, TXT, MD, CSV, XLSX, JSON, HTML",
         )
-        if st.button("Upload & Ingest", disabled=not files):
+        if st.button("Upload & Ingest", disabled=not files, key="data_upload_ingest"):
             for f in files:
                 with st.spinner(f"Ingesting {f.name}…"):
                     try:
@@ -45,7 +45,7 @@ def render():
         url = st.text_input("Document URL", placeholder="https://…")
         url_doc_type_label = st.selectbox("Type", list(DOC_TYPES.keys()), key="url_type")
         url_doc_type = DOC_TYPES[url_doc_type_label]
-        if st.button("Fetch & Ingest", disabled=not url):
+        if st.button("Fetch & Ingest", disabled=not url, key="data_fetch_ingest"):
             with st.spinner("Fetching & ingesting…"):
                 try:
                     from api_client import post

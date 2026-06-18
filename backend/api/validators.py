@@ -4,7 +4,8 @@ from urllib.parse import urlparse
 
 from fastapi import HTTPException
 
-_SYMBOL_RE = re.compile(r"^[A-Z]{1,10}$")
+# Supports US tickers (AAPL, BRK-B), Indian NSE (RELIANCE.NS, M&M.NS, BAJAJ-AUTO.NS, 3MINDIA.NS)
+_SYMBOL_RE = re.compile(r"^[A-Z0-9][A-Z0-9&\-]{0,19}(\.(NS|BO))?$")
 
 _PRIVATE_NETS = [
     ipaddress.ip_network("10.0.0.0/8"),
@@ -17,10 +18,25 @@ _PRIVATE_NETS = [
 ]
 
 
+def validated_symbol(symbol: str) -> str:
+    """Dependency form of validate_symbol for the {symbol} path param.
+
+    Declare before any DB dependency so invalid symbols return 422 without
+    acquiring a connection.
+    """
+    return validate_symbol(symbol)
+
+
 def validate_symbol(symbol: str) -> str:
     s = symbol.strip().upper()
     if not _SYMBOL_RE.match(s):
-        raise HTTPException(status_code=422, detail=f"Invalid symbol: {symbol!r}. Must be 1-10 uppercase letters.")
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Invalid symbol: {symbol!r}. "
+                "Use US tickers (AAPL, BRK-B) or Indian NSE tickers with .NS suffix (RELIANCE.NS, M&M.NS)."
+            ),
+        )
     return s
 
 

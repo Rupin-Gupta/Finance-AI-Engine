@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from datetime import datetime, timedelta, timezone
 
 from backend.api.auth import require_api_key
-from backend.api.validators import validate_symbol
+from backend.api.validators import validated_symbol
 from backend.dependencies import get_db
 from backend.db.queries.market_data import get_ohlcv
 from backend.db.queries.analytics import get_analytics, upsert_analytics
@@ -13,8 +13,7 @@ router = APIRouter(dependencies=[Depends(require_api_key)])
 
 
 @router.get("/{symbol}")
-async def get_analytics_endpoint(symbol: str, days: int = 60, conn=Depends(get_db)):
-    sym = validate_symbol(symbol)
+async def get_analytics_endpoint(sym: str = Depends(validated_symbol), days: int = 60, conn=Depends(get_db)):
     end = datetime.now(tz=timezone.utc)
     start = end - timedelta(days=days)
 
@@ -28,9 +27,13 @@ async def get_analytics_endpoint(symbol: str, days: int = 60, conn=Depends(get_d
         return {"symbol": sym, "data": []}
 
     df = pd.DataFrame([dict(r) for r in ohlcv_rows]).sort_values("timestamp")
+    # asyncpg returns NUMERIC as Decimal — coerce before float math
+    for col in ("open", "high", "low", "close", "volume"):
+        if col in df.columns:
+            df[col] = df[col].astype(float)
     df = add_all_indicators(df)
     analytics_rows = df[
-        ["symbol", "timestamp", "sma_20", "ema_20", "rsi_14", "volatility_20", "momentum_10"]
+        ["symbol", "timestamp", "sma_20", "ema_9", "ema_20", "rsi_14", "volatility_20", "momentum_10"]
     ].to_dict("records")
     await upsert_analytics(conn, analytics_rows)
 

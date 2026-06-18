@@ -1,0 +1,2 @@
+ALTER TABLE decisions ADD COLUMN IF NOT EXISTS bull_case TEXT;
+ALTER TABLE decisions ADD COLUMN IF NOT EXISTS bear_case TEXT;

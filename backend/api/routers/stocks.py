@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.auth import require_api_key
-from backend.api.validators import validate_symbol
+from backend.api.validators import validated_symbol
 from backend.dependencies import get_db
 from backend.ingest.market import fetch_finnhub_quote
 from backend.db.queries.market_data import get_ohlcv
@@ -12,8 +12,7 @@ router = APIRouter(dependencies=[Depends(require_api_key)])
 
 
 @router.get("/{symbol}/quote")
-async def get_quote(symbol: str, conn=Depends(get_db)):
-    sym = validate_symbol(symbol)
+async def get_quote(sym: str = Depends(validated_symbol), conn=Depends(get_db)):
     quote = await fetch_finnhub_quote(sym)
     if quote:
         return quote
@@ -34,8 +33,7 @@ async def get_quote(symbol: str, conn=Depends(get_db)):
 
 
 @router.get("/{symbol}/ohlcv")
-async def get_ohlcv_endpoint(symbol: str, days: int = 30, conn=Depends(get_db)):
-    sym = validate_symbol(symbol)
+async def get_ohlcv_endpoint(sym: str = Depends(validated_symbol), days: int = 30, conn=Depends(get_db)):
     end = datetime.now(tz=timezone.utc)
     start = end - timedelta(days=days)
     rows = await get_ohlcv(conn, sym, start, end)

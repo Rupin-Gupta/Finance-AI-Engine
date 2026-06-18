@@ -13,6 +13,19 @@ async def insert_alert(conn: asyncpg.Connection, symbol: str, alert_type: str,
     return str(row["id"])
 
 
+async def get_alerts_since(conn: asyncpg.Connection, since) -> list[asyncpg.Record]:
+    """Alerts detected strictly after `since`, oldest first. Used by the live stream."""
+    return await conn.fetch(
+        """
+        SELECT id, symbol, alert_type, value, threshold, detected_at
+        FROM alerts
+        WHERE detected_at > $1
+        ORDER BY detected_at
+        """,
+        since,
+    )
+
+
 async def list_alerts(conn: asyncpg.Connection, symbol: str | None = None,
                        limit: int = 50) -> list[asyncpg.Record]:
     if symbol:

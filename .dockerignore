@@ -1,0 +1,37 @@
+# Secrets
+.env
+
+# Python build artifacts
+__pycache__
+*.py[cod]
+*.pyo
+.venv
+venv
+env
+*.egg-info
+dist
+build
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Dev/test — not needed in images
+tests/
+graphify-out/
+plugins/
+memory/
+*.md
+SPEC.md
+AGENTS.md
+GEMINI.md
+
+# Git
+.git
+.gitignore
+
+# Data (mounted as volumes)
+data/
+
+# IDE
+.idea/
+.vscode/

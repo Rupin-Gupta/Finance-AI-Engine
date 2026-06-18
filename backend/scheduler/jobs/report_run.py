@@ -4,7 +4,7 @@ from backend.reporting.sector_report import run_sector_report
 
 
 async def run() -> None:
-    pool = await get_db_pool()
+    pool = get_db_pool()
     async with pool.acquire() as conn:
         job_id = await create_job(conn, "report_run")
         try:

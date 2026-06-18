@@ -44,8 +44,10 @@ def _save_index_unsafe() -> None:
     idx_path, meta_path = _paths()
     idx_path.parent.mkdir(parents=True, exist_ok=True)
 
-    tmp_idx = idx_path.with_suffix(".tmp")
-    tmp_meta = meta_path.with_suffix(".tmp")
+    # Append ".tmp" to the full name (not replace the suffix) so the two staging
+    # files never collide when index/metadata paths share a stem (e.g. test.index/test.pkl).
+    tmp_idx = idx_path.with_name(idx_path.name + ".tmp")
+    tmp_meta = meta_path.with_name(meta_path.name + ".tmp")
 
     faiss.write_index(_index, str(tmp_idx))
     with open(tmp_meta, "wb") as f:
@@ -84,6 +86,7 @@ def add_vectors(vectors: np.ndarray, meta: list[dict], index_version: int | None
 
 def search(query_vec: np.ndarray, top_k: int = 5) -> list[dict]:
     """Returns [{doc_id, chunk_index, score}]."""
+    global _index, _metadata, _loaded_version
     with _lock:
         if _index is None:
             idx_path, meta_path = _paths()

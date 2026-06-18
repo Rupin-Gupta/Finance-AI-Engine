@@ -41,7 +41,7 @@ async def test_market_refresh_creates_and_completes_job():
     pool = _make_pool(conn)
     mock_ingest = AsyncMock(return_value="market-job-1")
 
-    with patch("backend.scheduler.jobs.market_refresh.get_db_pool", AsyncMock(return_value=pool)), \
+    with patch("backend.scheduler.jobs.market_refresh.get_db_pool", MagicMock(return_value=pool)), \
          patch("backend.scheduler.jobs.market_refresh.run_market_ingest", mock_ingest):
         from backend.scheduler.jobs.market_refresh import run
         await run()
@@ -58,7 +58,7 @@ async def test_analytics_run_creates_and_completes_job():
     conn = _make_conn("analytics-job-1")
     pool = _make_pool(conn)
 
-    with patch("backend.scheduler.jobs.analytics_run.get_db_pool", AsyncMock(return_value=pool)), \
+    with patch("backend.scheduler.jobs.analytics_run.get_db_pool", MagicMock(return_value=pool)), \
          patch("backend.scheduler.jobs.analytics_run.create_job", AsyncMock(return_value="analytics-job-1")) as mock_create, \
          patch("backend.scheduler.jobs.analytics_run.update_job_status", AsyncMock()) as mock_update, \
          patch("backend.scheduler.jobs.analytics_run.get_ohlcv", AsyncMock(return_value=[])):
@@ -78,7 +78,7 @@ async def test_anomaly_scan_creates_and_completes_job():
     conn = _make_conn("anomaly-job-1")
     pool = _make_pool(conn)
 
-    with patch("backend.scheduler.jobs.anomaly_scan.get_db_pool", AsyncMock(return_value=pool)), \
+    with patch("backend.scheduler.jobs.anomaly_scan.get_db_pool", MagicMock(return_value=pool)), \
          patch("backend.scheduler.jobs.anomaly_scan.create_job", AsyncMock(return_value="anomaly-job-1")) as mock_create, \
          patch("backend.scheduler.jobs.anomaly_scan.update_job_status", AsyncMock()) as mock_update, \
          patch("backend.scheduler.jobs.anomaly_scan.get_ohlcv", AsyncMock(return_value=[])):
@@ -114,7 +114,7 @@ async def test_doc_refresh_calls_run_doc_ingest_for_each_url(monkeypatch):
     pool = _make_pool(conn)
     mock_ingest = AsyncMock()
 
-    with patch("backend.scheduler.jobs.doc_refresh.get_db_pool", AsyncMock(return_value=pool)), \
+    with patch("backend.scheduler.jobs.doc_refresh.get_db_pool", MagicMock(return_value=pool)), \
          patch("backend.scheduler.jobs.doc_refresh.run_doc_ingest", mock_ingest):
         await doc_mod.run()
 
@@ -132,7 +132,7 @@ async def test_report_run_creates_and_completes_job():
     conn = _make_conn("report-job-1")
     pool = _make_pool(conn)
 
-    with patch("backend.scheduler.jobs.report_run.get_db_pool", AsyncMock(return_value=pool)), \
+    with patch("backend.scheduler.jobs.report_run.get_db_pool", MagicMock(return_value=pool)), \
          patch("backend.scheduler.jobs.report_run.create_job", AsyncMock(return_value="report-job-1")) as mock_create, \
          patch("backend.scheduler.jobs.report_run.update_job_status", AsyncMock()) as mock_update, \
          patch("backend.scheduler.jobs.report_run.run_sector_report", AsyncMock()):
@@ -152,7 +152,7 @@ async def test_report_run_marks_job_failed_on_error():
     conn = _make_conn("report-job-2")
     pool = _make_pool(conn)
 
-    with patch("backend.scheduler.jobs.report_run.get_db_pool", AsyncMock(return_value=pool)), \
+    with patch("backend.scheduler.jobs.report_run.get_db_pool", MagicMock(return_value=pool)), \
          patch("backend.scheduler.jobs.report_run.create_job", AsyncMock(return_value="report-job-2")), \
          patch("backend.scheduler.jobs.report_run.update_job_status", AsyncMock()) as mock_update, \
          patch("backend.scheduler.jobs.report_run.run_sector_report", AsyncMock(side_effect=RuntimeError("llm down"))):
@@ -172,7 +172,7 @@ async def test_analytics_run_marks_job_failed_on_error():
     conn = _make_conn("analytics-job-2")
     pool = _make_pool(conn)
 
-    with patch("backend.scheduler.jobs.analytics_run.get_db_pool", AsyncMock(return_value=pool)), \
+    with patch("backend.scheduler.jobs.analytics_run.get_db_pool", MagicMock(return_value=pool)), \
          patch("backend.scheduler.jobs.analytics_run.create_job", AsyncMock(return_value="analytics-job-2")), \
          patch("backend.scheduler.jobs.analytics_run.update_job_status", AsyncMock()) as mock_update, \
          patch("backend.scheduler.jobs.analytics_run.get_ohlcv", AsyncMock(side_effect=Exception("db error"))):
@@ -192,7 +192,7 @@ async def test_anomaly_scan_marks_job_failed_on_error():
     conn = _make_conn("anomaly-job-2")
     pool = _make_pool(conn)
 
-    with patch("backend.scheduler.jobs.anomaly_scan.get_db_pool", AsyncMock(return_value=pool)), \
+    with patch("backend.scheduler.jobs.anomaly_scan.get_db_pool", MagicMock(return_value=pool)), \
          patch("backend.scheduler.jobs.anomaly_scan.create_job", AsyncMock(return_value="anomaly-job-2")), \
          patch("backend.scheduler.jobs.anomaly_scan.update_job_status", AsyncMock()) as mock_update, \
          patch("backend.scheduler.jobs.anomaly_scan.get_ohlcv", AsyncMock(side_effect=Exception("timeout"))):
@@ -204,11 +204,11 @@ async def test_anomaly_scan_marks_job_failed_on_error():
 
 
 # ---------------------------------------------------------------------------
-# worker — all 5 job IDs registered
+# worker — all job IDs registered
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_worker_registers_all_five_jobs():
+async def test_worker_registers_all_jobs():
     from backend.scheduler.worker import start_scheduler, scheduler
 
     if scheduler.running:
@@ -217,6 +217,12 @@ async def test_worker_registers_all_five_jobs():
     start_scheduler()
     try:
         job_ids = {j.id for j in scheduler.get_jobs()}
-        assert job_ids == {"market_refresh", "analytics_run", "anomaly_scan", "doc_refresh", "report_run"}
+        assert job_ids == {
+            "market_refresh", "analytics_run", "anomaly_scan", "doc_refresh",
+            "report_run", "sentiment_run", "decision_run", "fundamentals_run",
+            "corporate_actions_run", "signal_snapshot_run", "weight_tuning_run",
+            "paper_auto_run", "india_signals_run", "regime_run", "events_run", "stops_run",
+            "data_quality_run", "ml_train_run",
+        }
     finally:
         scheduler.shutdown(wait=False)

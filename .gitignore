@@ -1,0 +1,49 @@
+# Secrets — never commit
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Data / generated  (anchored to repo root — must NOT match backend/data/ source)
+/data/
+graphify-out/
+*.index
+*.pkl
+
+# Node (frontend-react has its own .gitignore too; this is a safety net)
+node_modules/
+
+# Local agent / editor tooling — not part of the product
+.claude/
+.agents/
+.codex-plugins/
+plugins/
+.mcp.json
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+
+# Project memory — kept local, not in VCS
+memory/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker
+*.log

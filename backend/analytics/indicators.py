@@ -28,6 +28,7 @@ def compute_momentum(df: pd.DataFrame, period: int = 10, price_col: str = "close
 def add_all_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["sma_20"] = compute_sma(df)
+    df["ema_9"] = compute_ema(df, window=9)
     df["ema_20"] = compute_ema(df)
     df["rsi_14"] = compute_rsi(df)
     df["volatility_20"] = compute_volatility(df)

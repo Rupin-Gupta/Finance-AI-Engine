@@ -12,7 +12,7 @@ DOC_URLS = [
 async def run() -> None:
     if not DOC_URLS:
         return
-    pool = await get_db_pool()
+    pool = get_db_pool()
     async with pool.acquire() as conn:
         for url in DOC_URLS:
             await run_doc_ingest(conn, url, doc_type="scheduled")
