@@ -47,3 +47,4 @@ memory/
 
 # Docker
 *.log
+*.tsbuildinfo
